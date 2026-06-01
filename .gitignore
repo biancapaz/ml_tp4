@@ -1,0 +1,12 @@
+# Ignore the dataset file added during development
+# Keep dataset files out of Git history and GitHub pushes
+data/raw/fashion_mnist_subset.csv
+
+# Python cache and compiled artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
