@@ -5,7 +5,8 @@ def random_stratified_split(df, target_col="label", test_ratio=0.2, random_state
 
     Args:
         df (pd.DataFrame): The input DataFrame to split.
-        train_ratio (float, optional): The proportion of data to use for training. Defaults to 0.8.
+        target_col (str, optional): Column name of the target class label. Defaults to "label".
+        test_ratio (float, optional): The proportion of data to use for testing. Defaults to 0.2.
         random_state (int, optional): Random seed for reproducibility. Defaults to 42.
 
     Returns:
@@ -15,7 +16,7 @@ def random_stratified_split(df, target_col="label", test_ratio=0.2, random_state
     train_idx, val_idx = [], []
 
     for cls in df[target_col].unique():
-        cls_idx = df.index[df[target_col] == cls].to_numpy() # class idxs
+        cls_idx = df.index[df[target_col] == cls].to_numpy().copy() # class idxs
         rng.shuffle(cls_idx) # shuffle idxs
         cut = int(len(cls_idx) * (1 - test_ratio)) # up to what idx
         train_idx.extend(cls_idx[:cut])

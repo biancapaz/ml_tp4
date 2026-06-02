@@ -1,4 +1,6 @@
 import numpy as np
+import torch
+import torch.nn as nn
 
 class PCA:
     def __init__(self, k_components):
@@ -40,3 +42,26 @@ class PCA:
     def explained_variance_ratio(self):
         total = self.eigvals.sum()
         return self.eigvals / total
+
+class AE(nn.Module):
+    def __init__(self, input_dim, latent_dim):
+        super().__init__()
+        self.encoder = nn.Sequential(
+            nn.Linear(input_dim, 512), nn.ReLU(),
+            nn.Linear(512, 256), nn.ReLU(),
+            nn.Linear(256, latent_dim),
+        )
+        self.decoder = nn.Sequential(
+            nn.Linear(latent_dim, 256), nn.ReLU(),
+            nn.Linear(256, 512), nn.ReLU(),
+            nn.Linear(512, input_dim), nn.Sigmoid(),
+        )
+
+    def forward(self, X):
+        return self.decoder(self.encoder(X))
+    
+    def encode(self, X):
+        return self.encoder(X)
+    
+    def decode(self, z):
+        return self.decoder(z)

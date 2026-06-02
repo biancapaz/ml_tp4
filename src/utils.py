@@ -70,21 +70,28 @@ def plot_pixel_stats(df):
     plt.tight_layout()
     plt.show()
 
-def show_images(X, y, n=15, indexes=None, titles=None, random_state=42):
+def show_images(X, y, n=15, indices=None, axes=None, row_title=None, random_state=42):
+    X = np.array(X)
     rng = np.random.default_rng(random_state)
-    idx = indexes if indexes is not None else rng.choice(len(X), n, replace=False)
+    idx = indices if indices is not None else rng.choice(len(X), n, replace=False)
 
-    fig, axes = plt.subplots(1, len(idx), figsize=(2 * len(idx), 2.5))
-    for ax, i in zip(axes, idx):
-        img = X[i].reshape(28, 28)
+    # si no recibe axes externos, crea su propia figura (uso standalone)
+    standalone = axes is None
+    if standalone:
+        fig, axes = plt.subplots(1, len(idx), figsize=(2 * len(idx), 2.5))
 
-        ax.imshow(img, cmap='gray')
-        label = titles[i] if titles is not None else LABEL_NAMES.get(y[i], y[i])
-        ax.set_title(label, fontsize=8)
-        ax.axis('off')
+    for col, i in enumerate(idx):
+        axes[col].imshow(X[i].reshape(28, 28), cmap="gray")
+        axes[col].set_title(LABEL_NAMES.get(y[i], y[i]), fontsize=8)
+        axes[col].axis("off")
 
-    plt.tight_layout()
-    plt.show()
+    if row_title:
+        axes[0].set_ylabel(row_title, fontsize=9)
+
+    if standalone:
+        plt.tight_layout()
+        plt.show()
+
     return idx
 
 def show_separate_classes(X, y, classes, n_per_class, random_state = 42):
@@ -162,18 +169,11 @@ def reconstruct(X_std, pca, k):
 
     return X_recon
 
-def plot_reconstruction(X_original, X_reconstructed, indices):
-    n = len(indices)
-    fig, axes = plt.subplots(2, n, figsize=(2 * n, 4))
-
-    for col, i in enumerate(indices):
-        for row, (imgs, title) in enumerate([(X_original, "Original"), (X_reconstructed, "PCA recon."),]):
-            ax = axes[row, col]
-            ax.imshow(imgs[i].reshape(28, 28), cmap="gray")
-            ax.axis("off")
-            if col == 0:
-                ax.set_ylabel(title, fontsize=8)
-
-    fig.suptitle(f"Reconstrucción PCA (k={X_reconstructed.shape[1] if hasattr(X_reconstructed, 'shape') else '?'})")
+def plot_reconstruction(X_original, X_reconstructed, y, indices):
+    fig, axes = plt.subplots(2, len(indices), figsize=(2 * len(indices), 4))
+    
+    show_images(X_original, y, indices=indices, axes=axes[0], row_title="Original")
+    show_images(X_reconstructed, y, indices=indices, axes=axes[1], row_title="Reconstruida")
+    
     plt.tight_layout()
     plt.show()
