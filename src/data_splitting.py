@@ -23,5 +23,19 @@ def random_stratified_split(df, target_col="label", test_ratio=0.2, random_state
         val_idx.extend(cls_idx[cut:])
 
     train_set = df.loc[train_idx].reset_index(drop=True)
-    val_set   = df.loc[val_idx].reset_index(drop=True)
+    val_set = df.loc[val_idx].reset_index(drop=True)
     return train_set, val_set
+
+def stratified_sample(X, y, target_col="label", n=3000, random_state=42):
+    rng = np.random.default_rng(random_state)
+    groups = np.unique(y)
+    n_per_group = n // len(groups)
+    sample_idx = []
+
+    for cls in groups:
+        cls_idx = np.where(y == cls)[0].copy()
+        rng.shuffle(cls_idx)
+        sample_idx.extend(cls_idx[:n_per_group])
+    
+    sample_idx = np.array(sample_idx)
+    return X[sample_idx], y[sample_idx]
