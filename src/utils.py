@@ -130,16 +130,11 @@ def show_proportions(df, title=None):
     plt.tight_layout()
     plt.show()
 
-def find_k_90(pca, threshold=0.9):
-    var_ratios = pca.explained_variance_ratio()
-    cumulative = np.cumsum(var_ratios)
-    k = np.argmax(cumulative >= threshold) + 1
-    print(f"Componentes para explicar {threshold*100:.0f}% de varianza: {k}")
-    return k
-
 def plot_explained_variance(pca, threshold=0.9):
-    cumvar = np.cumsum(pca.explained_variance_ratio())
-    k = find_k_90(pca, threshold=threshold)
+    evr = pca.explained_variance_ratio()
+    cumvar = np.cumsum(evr)
+    
+    k = np.argmax(cumvar >= threshold) + 1
 
     fig, ax = plt.subplots(figsize=(9, 4))
     ax.plot(range(1, len(cumvar) + 1), cumvar, linewidth=1.5, color="steelblue")
@@ -156,24 +151,47 @@ def plot_explained_variance(pca, threshold=0.9):
 
     return k
 
-def reconstruct(X_std, pca, k):
-    pc = pca.components[:, :k]
-    X_proj = pca.transform_pca(X_std, k=k)
-    X_recon = np.dot(X_proj, pc.T)
-
-    std = np.where(np.isclose(pca.std, 0), 1, pca.std)
-    X_recon = (X_recon * std) + pca.mean
-
-    # clampear al rango válido
-    X_recon = np.clip(X_recon, 0, 1)
-
-    return X_recon
-
-def plot_reconstruction(X_original, X_reconstructed, y, indices):
+def plot_reconstruction(X_original, X_reconstructed, y, n=10, seed=42):
+    indices = np.random.default_rng(seed).choice(len(X_original), n, replace=False)
     fig, axes = plt.subplots(2, len(indices), figsize=(2 * len(indices), 4))
     
     show_images(X_original, y, indices=indices, axes=axes[0], row_title="Original")
     show_images(X_reconstructed, y, indices=indices, axes=axes[1], row_title="Reconstruida")
     
+    plt.tight_layout()
+    plt.show()
+
+def plot_loss(train_losses, test_losses):
+    fig, ax = plt.subplots(figsize=(8, 3))
+    ax.plot(train_losses, label="Train")
+    ax.plot(test_losses,  label="Test")
+    ax.set_xlabel("Época")
+    ax.set_ylabel("MSE")
+    ax.set_title("Curva de entrenamiento — Autoencoder")
+    ax.legend()
+    ax.spines[["top", "right"]].set_visible(False)
+    plt.tight_layout()
+    plt.show()
+
+def plot_clustering_metrics(metrics_pca, metrics_ae):
+    ks     = metrics_pca["ks"]
+    ks_mid = ks[1:]   # para las ganancias marginales (diff achica en 1)
+
+    def plot_two(ax, ks, y_pca, y_ae, title, ylabel):
+        ax.plot(ks, y_pca, marker='o', label='PCA', color='orange')
+        ax.plot(ks, y_ae,  marker='o', label='AE',  color='steelblue')
+        ax.set_title(title); ax.set_xlabel('K'); ax.set_ylabel(ylabel)
+        ax.legend(); ax.grid(True, alpha=0.3)
+
+    fig, axes = plt.subplots(2, 3, figsize=(16, 8))
+
+    plot_two(axes[0,0], ks,     metrics_pca["inertias"],    metrics_ae["inertias"],    'KMeans — Inercia vs K',      'Inercia')
+    plot_two(axes[0,1], ks_mid, metrics_pca["marginal_i"],  metrics_ae["marginal_i"],  'KMeans — Ganancia marginal', 'Δ Inercia')
+    plot_two(axes[0,2], ks,     metrics_pca["sil_km"],      metrics_ae["sil_km"],      'KMeans — Silhouette vs K',   'Silhouette')
+    plot_two(axes[1,0], ks,     metrics_pca["ll"],          metrics_ae["ll"],          'GMM — Log-likelihood vs K',  'Log-likelihood')
+    plot_two(axes[1,1], ks_mid, metrics_pca["marginal_ll"], metrics_ae["marginal_ll"], 'GMM — Ganancia marginal',    'Δ Log-likelihood')
+    plot_two(axes[1,2], ks,     metrics_pca["sil_gmm"],     metrics_ae["sil_gmm"],     'GMM — Silhouette vs K',      'Silhouette')
+
+    plt.suptitle('Clustering: PCA vs AE latent space', fontsize=14, y=1.01)
     plt.tight_layout()
     plt.show()
